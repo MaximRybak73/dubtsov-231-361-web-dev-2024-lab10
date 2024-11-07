@@ -7,7 +7,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         echo "<p style='color: blue; font-style: italic;'>Исходный текст: <span style='color: green; font-weight: bold;'>" . htmlspecialchars($text) . "</span></p>";
 
-        //кол-во символов
+        //кол-во символов учитывая многобайтовые символы
         $char_count = preg_match_all('/./us', $text, $matches);
 
         //счетчики
@@ -21,32 +21,31 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         //массивы для частот символов и слов
         $char_frequency = [];
         $word_frequency = [];
-        $words = preg_split('/\s+/u', trim($text)); //разделить текст на слова
+        $words = preg_split('/\s+/u', trim($text)); //разделить текст на слова, игнорируя пробелы, табуляции или переходы на новую строку
 
         foreach ($words as $word) {
             if (!empty($word)) {
-                $word_count++;
-                //увеличить счетчик для слова
-                $word_frequency[$word] = isset($word_frequency[$word]) ? $word_frequency[$word] + 1 : 1;
+                $word_count++;//увеличить счетчик для слов
+                $word_frequency[$word] = isset($word_frequency[$word]) ? $word_frequency[$word] + 1 : 1; //счетчик частоты для текущего слова
 
-                //посчитать символы и их категории
-                $characters = preg_split('//u', $word, -1, PREG_SPLIT_NO_EMPTY);
-                foreach ($characters as $char) {
+                //разделить текущее слово на отдельные символы
+                $characters = preg_split('//u', $word, -1, PREG_SPLIT_NO_EMPTY); //на каждый символ, -1 - нет ограничений на колво частей и пустые строки не будут включены
+                foreach ($characters as $char) { //перебор всех символов в слове
                     // Подсчет букв (рус и англ)
-                    if (preg_match('/\p{L}/u', $char)) {
-                        $letter_count++;
-                        if (preg_match('/\p{Lu}/u', $char)) {
+                    if (preg_match('/\p{L}/u', $char)) { //является ли символ буквой (поиск всех буквенных символов)
+                        $letter_count++; //счетчик просто букв
+                        if (preg_match('/\p{Lu}/u', $char)) { //если буква заглавная
                             $uppercase_count++;
                         } else {
-                            $lowercase_count++;
+                            $lowercase_count++; //строчная
                         }
-                    } elseif (ctype_digit($char)) {
+                    } elseif (ctype_digit($char)) { //если символ это цифра 
                         $digit_count++;
-                    } elseif (preg_match('/[.,;:!?\'"]/u', $char)) {
+                    } elseif (preg_match('/[.,;:!?\'"]/u', $char)) { //если символ знак препинания
                         $punctuation_count++;
                     }
 
-                    //посчитать частоту вхождения символов
+                    //счетчик вхождений текущего символа в массиве частот
                     $char_frequency[$char] = isset($char_frequency[$char]) ? $char_frequency[$char] + 1 : 1;
                 }
             }
@@ -72,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         // Таблица частоты каждого слова
         echo "<p>Список слов и их количество:</p><table border='1' cellpadding='5'>";
-        ksort($word_frequency); // Сортировка по алфавиту
+        ksort($word_frequency); //сортировка слов по алфавиту
         foreach ($word_frequency as $word => $count) {
             echo "<tr><td>" . htmlspecialchars($word) . "</td><td>$count</td></tr>";
         }
